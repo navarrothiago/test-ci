@@ -4,17 +4,24 @@ on:
   push:
     # Always trigger CI on push
   pull_request:
-    branches: [ $default-branch ]
-
-
+    # Always trigger CI on PR
+  issue_comment:
+    types:
+      - created
 jobs:
   build:
+    if: |
+      (github.event_name == 'issue_comment' && (
+        (startsWith(github.event.comment.body, 'test-ci'))
+      )) ||
+      (github.event_name == 'schedule' && github.repository == 'navarrothiago/test-ci') ||
+      github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
         # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-        buildtype: [Debug, Release]
+        buildtype: [Release]
     env:
       BUILD_TYPE: ${{ matrix.buildtype }}
     steps:
@@ -31,9 +38,9 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{runner.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - name: Test
-      working-directory: ${{runner.workspace}}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}}
+    # - name: Test
+    #   working-directory: ${{runner.workspace}}/build
+    #   # Execute tests defined by the CMake configuration.  
+    #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+    #   run: ctest -C ${{env.BUILD_TYPE}}
       
